@@ -1,34 +1,23 @@
 package service;
 
 import exception.InvalidGradeException;
-import model.Evaluatable;
-import model.Task;
-import model.User;
+import model.*;
 
 public class EvaluationService {
 
-    public void evaluateAndReward(User user, Task task, double grade) {
-        if (grade < 0 || grade > 100) {
-            throw new InvalidGradeException("Invalid grade: " + grade);
+    public int processTaskEvaluation(Task task, int submittedScore) throws InvalidGradeException {
+        if (submittedScore < 0 || submittedScore > 100) {
+            throw new InvalidGradeException("Score must be between 0 and 100. Submitted: " + submittedScore);
         }
 
-        user.completeTask(task);
-        System.out.println("[TASK] " + task.getTitle() + " — COMPLETED");
-        System.out.println("[GRADE] " + (int)grade + "%");
+        task.complete();
 
-        int baseXp = 50; // Базовая награда
-        int bonusXp = 0;
-
-        if (task instanceof Evaluatable) {
-            Evaluatable evalTask = (Evaluatable) task;
-            evalTask.evaluate(grade);
-            bonusXp = evalTask.calculateBonus(grade);
+        if (task instanceof Evaluatable evaluatable) {
+            PerformanceGrade grade = evaluatable.evaluatePerformance(submittedScore);
+            int bonusXp = evaluatable.calculateBonusXp(task.getBaseXp(), grade);
+            return task.getBaseXp() + bonusXp;
         }
 
-        int totalXp = baseXp + bonusXp;
-        System.out.println("[REWARD] Base XP: " + baseXp + " | Bonus XP: " + bonusXp + " | Total: " + totalXp);
-
-        user.addXP(totalXp);
-        System.out.println("[PROFILE] Level: " + user.getLevel() + " | XP: " + user.getXp() + " | Rank: " + user.getRank());
+        return task.getBaseXp();
     }
 }

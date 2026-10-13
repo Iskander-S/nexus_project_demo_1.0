@@ -1,6 +1,6 @@
 package model;
 
 public interface Evaluatable {
-    void evaluate(double grade);
-    int calculateBonus(double grade);
+    PerformanceGrade evaluatePerformance(int actualScore);
+    int calculateBonusXp(int baseXp, PerformanceGrade grade);
 }

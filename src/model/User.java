@@ -1,39 +1,31 @@
 package model;
 
-public class User {
-    private String name;
-    private int level;
-    private int xp;
-    private Rank rank;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+
+public class User implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    private final String name;
+    private int level = 1;
+    private int currentXp = 0;
+    private Rank rank = Rank.E_RANK;
+    private final List<Task> tasks = new ArrayList<>();
 
     public User(String name) {
         this.name = name;
-        this.level = 1;
-        this.xp = 0;
-        this.rank = Rank.E;
     }
 
-    public void addXP(int gainedXp) {
-        this.xp += gainedXp;
-        this.level = (this.xp / 100) + 1; // Уровень каждые 100 XP
-        calculateRank();
-    }
-
-    public void calculateRank() {
-        if (this.xp >= 1000) this.rank = Rank.S;
-        else if (this.xp >= 800) this.rank = Rank.A;
-        else if (this.xp >= 600) this.rank = Rank.B;
-        else if (this.xp >= 400) this.rank = Rank.C;
-        else if (this.xp >= 200) this.rank = Rank.D;
-        else this.rank = Rank.E;
-    }
-
-    public void completeTask(Task task) {
-        task.complete();
+    public void addXp(int amount) {
+        this.currentXp += amount;
+        this.level = 1 + (this.currentXp / 200);
+        this.rank = Rank.getRankByXp(this.currentXp);
     }
 
     public String getName() { return name; }
     public int getLevel() { return level; }
-    public int getXp() { return xp; }
+    public int getCurrentXp() { return currentXp; }
     public Rank getRank() { return rank; }
+    public List<Task> getTasks() { return tasks; }
 }
