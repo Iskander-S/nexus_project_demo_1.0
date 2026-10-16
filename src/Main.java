@@ -12,14 +12,11 @@ public class Main {
     public static void main(String[] args) {
         System.out.println("=== [NEXUS SYSTEM INITIALIZED - V4.0 ARCHITECTURE] ===\n");
 
-        // 1. Инициализация таблиц БД из application.properties
         DatabaseManager.initTables();
 
-        // 2. Внедрение зависимостей через интерфейсы
         UserRepository userRepository = new H2UserRepositoryImpl();
         TaskRepository taskRepository = new H2TaskRepositoryImpl();
 
-        // 3. Создаем пользовательский профиль
         String userId = "user_001";
         User user = new User(userId, "Iskander");
         user.addXp(450); // Level 3, Rank D_RANK
@@ -28,18 +25,15 @@ public class Main {
         userRepository.save(user);
         System.out.println("Saved User: " + user.getName() + " (Level " + user.getLevel() + ", Rank " + user.getRank() + ")");
 
-        // Создаем тестовые задачи
         Task daily = new DailyTask("D10", "Read Clean Architecture", "Read Chapter 3 for 30 mins", 100);
         Task global = new GlobalQuest("Q10", "CTEC Exam", "Final Assessment", 300, 95);
 
-        // Сохраняем задачи с привязкой к userId
         taskRepository.saveTaskWithUserId(daily, userId);
         taskRepository.saveTaskWithUserId(global, userId);
         System.out.println("Saved 2 tasks for user: " + userId);
 
         System.out.println("\n--- [PERSISTENCE: LOADING FROM H2 DATABASE] ---");
 
-        // 4. Проверяем восстановление профиля
         Optional<User> loadedUserOpt = userRepository.findById(userId);
         if (loadedUserOpt.isPresent()) {
             User loadedUser = loadedUserOpt.get();
