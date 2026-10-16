@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/nexus project tests.iml" filepath="$PROJECT_DIR$/nexus project tests.iml" />
+      <module fileurl="file://$PROJECT_DIR$/nexus-project.iml" filepath="$PROJECT_DIR$/nexus-project.iml" />
     </modules>
   </component>
 </project>

@@ -1,16 +1,40 @@
 package db;
 
+import exception.DataAccessException;
+
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Properties;
 
 public class DatabaseManager {
-    private static final String DB_URL = "jdbc:h2:./data/nexus_db;DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE";
-    private static final String USER = "sa";
-    private static final String PASS = "";
+    private static final Properties props = new Properties();
+
+    static {
+        try (InputStream input = DatabaseManager.class.getResourceAsStream("/application.properties")) {
+            if (input == null) {
+                try (InputStream clInput = DatabaseManager.class.getClassLoader().getResourceAsStream("application.properties")) {
+                    if (clInput == null) {
+                        throw new RuntimeException("Unable to find application.properties in classpath");
+                    }
+                    props.load(clInput);
+                }
+            } else {
+                props.load(input);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load database configuration", e);
+        }
+    }
 
     public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(DB_URL, USER, PASS);
+        return DriverManager.getConnection(
+                props.getProperty("db.url"),
+                props.getProperty("db.user"),
+                props.getProperty("db.password")
+        );
     }
 
     public static void initTables() {
@@ -36,11 +60,11 @@ public class DatabaseManager {
             );
         """;
 
-        try (var conn = getConnection(); var stmt = conn.createStatement()) {
+        try (Connection conn = getConnection(); var stmt = conn.createStatement()) {
             stmt.execute(schema);
-            System.out.println("[DATABASE] H2 Schema initialized successfully.");
+            System.out.println("[DATABASE] H2 Schema initialized from application.properties.");
         } catch (SQLException e) {
-            System.err.println("[DATABASE ERROR] Initialization failed: " + e.getMessage());
+            throw new DataAccessException("Failed to initialize database tables", e);
         }
     }
 }

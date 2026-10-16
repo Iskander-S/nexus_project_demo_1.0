@@ -28,3 +28,17 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+# H2 Database files
+/data/
+*.db
+
+# Build output
+/target/
+
+# IDE files
+.idea/
+*.iml
+
+# Legacy data
+*.dat

@@ -1,45 +1,62 @@
 import db.DatabaseManager;
-import db.TaskDao;
-import exception.InvalidGradeException;
+import db.H2TaskRepositoryImpl;
+import db.H2UserRepositoryImpl;
+import db.TaskRepository;
+import db.UserRepository;
 import model.*;
-import service.EvaluationService;
-import service.TaskManager;
+
+import java.util.List;
+import java.util.Optional;
 
 public class Main {
     public static void main(String[] args) {
-        System.out.println("=== [NEXUS SYSTEM INITIALIZED - H2 DB INTEGRATION] ===\n");
+        System.out.println("=== [NEXUS SYSTEM INITIALIZED - V4.0 ARCHITECTURE] ===\n");
 
+        // 1. Инициализация таблиц БД из application.properties
         DatabaseManager.initTables();
-        TaskDao taskDao = new TaskDao();
 
-        String userId = "user_003";
-        User user = new User("Iskander");
-        EvaluationService evalService = new EvaluationService();
-        TaskManager taskManager = new TaskManager(user.getTasks());
+        // 2. Внедрение зависимостей через интерфейсы
+        UserRepository userRepository = new H2UserRepositoryImpl();
+        TaskRepository taskRepository = new H2TaskRepositoryImpl();
 
-        DailyTask daily = new DailyTask("D3", "Read Java Docs", "Read Chapter 5 for 20 mins");
-        WeeklyTask weekly = new WeeklyTask("W3", "Lab Assignment 2", "Implement OOP inheritance");
-        GlobalQuest global = new GlobalQuest("Q3", "CTEC2710K 00 Design Exam", "Final Assessment", 300, 80);
+        // 3. Создаем пользовательский профиль
+        String userId = "user_001";
+        User user = new User(userId, "Iskander");
+        user.addXp(450); // Level 3, Rank D_RANK
 
-        taskManager.addTask(daily);
-        taskManager.addTask(weekly);
-        taskManager.addTask(global);
+        System.out.println("--- [PERSISTENCE: SAVING USER & TASKS] ---");
+        userRepository.save(user);
+        System.out.println("Saved User: " + user.getName() + " (Level " + user.getLevel() + ", Rank " + user.getRank() + ")");
 
-        try {
-            int earnedXp = evalService.processTaskEvaluation(global, 92);
-            user.addXp(earnedXp);
-        } catch (InvalidGradeException e) {
-            System.err.println("Error: " + e.getMessage());
-        }
+        // Создаем тестовые задачи
+        Task daily = new DailyTask("D10", "Read Clean Architecture", "Read Chapter 3 for 30 mins", 100);
+        Task global = new GlobalQuest("Q10", "CTEC Exam", "Final Assessment", 300, 95);
 
-        System.out.println("--- [PERSISTENCE: SAVING TO H2 DATABASE] ---");
-        taskDao.saveUser(user, userId);
-        taskManager.getAllTasks().forEach(task -> taskDao.saveTask(task, userId));
-        System.out.println("[PERSISTENCE] Saved to H2 DB successfully.");
+        // Сохраняем задачи с привязкой к userId
+        taskRepository.saveTaskWithUserId(daily, userId);
+        taskRepository.saveTaskWithUserId(global, userId);
+        System.out.println("Saved 2 tasks for user: " + userId);
 
         System.out.println("\n--- [PERSISTENCE: LOADING FROM H2 DATABASE] ---");
-        var restoredTasks = taskDao.loadTasksByUserId(userId);
-        System.out.printf("Loaded %d tasks from H2 Database for user '%s':\n", restoredTasks.size(), userId);
-        restoredTasks.forEach(t -> System.out.println("  [H2 RECORD] " + t));
+
+        // 4. Проверяем восстановление профиля
+        Optional<User> loadedUserOpt = userRepository.findById(userId);
+        if (loadedUserOpt.isPresent()) {
+            User loadedUser = loadedUserOpt.get();
+            System.out.println("Successfully restored User from H2:");
+            System.out.println(" -> ID: " + loadedUser.getId());
+            System.out.println(" -> Name: " + loadedUser.getName());
+            System.out.println(" -> Level: " + loadedUser.getLevel());
+            System.out.println(" -> Current XP: " + loadedUser.getCurrentXp());
+            System.out.println(" -> Rank: " + loadedUser.getRank());
+        } else {
+            System.err.println("User not found in H2 DB!");
+        }
+
+        List<Task> loadedTasks = taskRepository.findByUserId(userId);
+        System.out.println("\nSuccessfully loaded " + loadedTasks.size() + " tasks from H2:");
+        for (Task t : loadedTasks) {
+            System.out.println(" -> [" + t.getClass().getSimpleName() + "] " + t.getTitle() + " (XP: " + t.getBaseXp() + ")");
+        }
     }
 }
